@@ -1,9 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.13.0/.schema/devbox.schema.json",
-  "packages": [
-    "python@3.12.5",
-    "postgresql@16.4"
-  ],
+  "packages": {
+    "python":     "3.12.5",
+    "postgresql": "16.4",
+    "glibcLocales": {
+      "version":   "latest",
+      "platforms": ["x86_64-linux", "aarch64-linux"]
+    }
+  },
   "shell": {
     "init_hook": [
       "echo 'Welcome to devbox!' > /dev/null",
