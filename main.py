@@ -1,6 +1,43 @@
 from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
+import os
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+load_dotenv()
+
+
+def get_env_var(env_var):
+    try:
+        return os.getenv(env_var)
+    except KeyError:
+        raise Exception(f"{env_var} not found in your .env file!")
+
 
 app = Flask(__name__)
+app.config["SQLALCHEMY_DATABASE_URI"] = get_env_var("DATABASE_URI")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db = SQLAlchemy(app, model_class=Base)
+
+
+class Movie(db.Model):
+    __tablename__ = "movies"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(nullable=False)
+    ratings = db.relationship("UserRating", backref="movie")
+
+
+class UserRating(db.Model):
+    __tablename__ = "user_ratings"
+    user_id: Mapped[int] = mapped_column(primary_key=True)
+    movie_id: Mapped[int] = mapped_column(primary_key=True)
+    rating: Mapped[int] = mapped_column(nullable=False)
 
 
 # Registration endpoint for user sign-up
