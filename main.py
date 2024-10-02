@@ -34,7 +34,8 @@ class Movie(db.Model):
     __tablename__ = "movies"
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(nullable=False)
-    ratings = db.relationship("UserRating", backref="movie")
+    # Triggers a foreign key error when testing to create movies, so leaving it out for now
+    # ratings = db.relationship("UserRating", backref="Movie", lazy=True)
 
 
 class UserRating(db.Model):
@@ -106,6 +107,25 @@ def login():
 # Endpoint for admins to add a new movie to the database
 @app.route("/admin/add-movie", methods=["POST"])
 def admin_add_movie():
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    if "title" not in data:
+        return jsonify({"error": "Title is required"}), 400
+
+    movie = Movie(title=data["title"])
+
+    try:
+        db.session.add(movie)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": "Unable to create a movie.", "error": str(e)}), 400
+
+    finally:
+        db.session.close()
 
     return "Add Movie", 200
 
