@@ -34,15 +34,17 @@ class Movie(db.Model):
     __tablename__ = "movies"
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(nullable=False)
-    # Triggers a foreign key error when testing to create movies, so leaving it out for now
-    # ratings = db.relationship("UserRating", backref="Movie", lazy=True)
+    ratings = db.relationship("UserRating", back_populates="movie")
 
 
 class UserRating(db.Model):
     __tablename__ = "user_ratings"
-    user_id: Mapped[int] = mapped_column(primary_key=True)
-    movie_id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(db.ForeignKey("users.id"))
+    movie_id: Mapped[int] = mapped_column(db.ForeignKey("movies.id"))
     rating: Mapped[int] = mapped_column(nullable=False)
+    user = db.relationship("User", back_populates="ratings")
+    movie = db.relationship("Movie", back_populates="ratings")
 
 
 class User(db.Model):
@@ -50,6 +52,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(32), unique=True, nullable=False)
     password = db.Column(db.String(32), nullable=False)
+    ratings = db.relationship("UserRating", back_populates="user")
 
 
 def generate_token():
@@ -143,6 +146,11 @@ def admin_add_movie():
     if "title" not in data:
         return jsonify({"error": "Title is required"}), 400
 
+    # Check if the movie already exists
+    movie = Movie.query.filter_by(title=data["title"]).first()
+    if movie:
+        return jsonify({"message": "Movie already exists"}), 400
+
     movie = Movie(title=data["title"])
 
     try:
@@ -155,7 +163,15 @@ def admin_add_movie():
     finally:
         db.session.close()
 
-    return "Add Movie", 200
+    return (
+        jsonify(
+            {
+                "message": f"Movie created successfully: {data.get('title')}",
+                "error": None,
+            }
+        ),
+        200,
+    )
 
 
 # An endpoint for users to submit their ratings for movies
