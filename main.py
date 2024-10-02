@@ -55,6 +55,7 @@ def login():
 # Endpoint for admins to add a new movie to the database
 @app.route("/admin/add-movie", methods=["POST"])
 def admin_add_movie():
+
     return "Add Movie", 200
 
 
@@ -95,4 +96,8 @@ def delete_user_rating():
 
 
 if __name__ == "__main__":
+    # Create the DB tables if they don't exist
+    with app.app_context():
+        db.create_all()
+
     app.run(debug=True)
