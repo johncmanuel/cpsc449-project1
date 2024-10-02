@@ -12,6 +12,7 @@ packaging==24.1
 pathspec==0.12.1
 platformdirs==4.3.6
 PyJWT==2.9.0
+psycopg2-binary==2.9.9
 python-dotenv==1.0.1
 SQLAlchemy==2.0.35
 typing_extensions==4.12.2

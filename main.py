@@ -4,13 +4,45 @@ from dotenv import load_dotenv
 import os
 import datetime
 import jwt
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+class Base(DeclarativeBase):
+    pass
+
 
 load_dotenv()
 
+
+def get_env_var(env_var):
+    try:
+        return os.getenv(env_var)
+    except KeyError:
+        raise Exception(f"{env_var} not found in your .env file!")
+
+
 app = Flask(__name__)
 
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("SQLALCHEMY_DATABASE_URI")
+app.config["SECRET_KEY"] = get_env_var("SECRET_KEY")
+app.config["SQLALCHEMY_DATABASE_URI"] = get_env_var("DATABASE_URI")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db = SQLAlchemy(app, model_class=Base)
+
+
+class Movie(db.Model):
+    __tablename__ = "movies"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(nullable=False)
+    ratings = db.relationship("UserRating", backref="movie")
+
+
+class UserRating(db.Model):
+    __tablename__ = "user_ratings"
+    user_id: Mapped[int] = mapped_column(primary_key=True)
+    movie_id: Mapped[int] = mapped_column(primary_key=True)
+    rating: Mapped[int] = mapped_column(nullable=False)
+
 
 db = SQLAlchemy(app)
 
@@ -73,6 +105,7 @@ def login():
 # Endpoint for admins to add a new movie to the database
 @app.route("/admin/add-movie", methods=["POST"])
 def admin_add_movie():
+
     return "Add Movie", 200
 
 
@@ -113,4 +146,8 @@ def delete_user_rating():
 
 
 if __name__ == "__main__":
+    # Create the DB tables if they don't exist
+    with app.app_context():
+        db.create_all()
+
     app.run(debug=True)
