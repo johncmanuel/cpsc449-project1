@@ -116,11 +116,18 @@ def signup():
 
 
 # Login endpoint to authenticate users
+# TODO: Validate JWT token, check hashed passwords, and add other security stuff
 @app.route("/auth/login", methods=["POST"])
 def login():
     data = request.get_json()
-    username = data.get("username")
-    password = data.get("password")
+    username, password = data.get("username"), data.get("password")
+
+    if not username or not password:
+        return jsonify({"message": "Username and password are required"}), 400
+
+    user = User.query.filter_by(username=username, password=password).first()
+    if not user:
+        return jsonify({"message": "Invalid credentials"}), 401
 
     return jsonify({"message": "Login Success"}), 200
 
