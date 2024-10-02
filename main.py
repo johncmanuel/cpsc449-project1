@@ -46,6 +46,7 @@ class UserRating(db.Model):
 
 
 class User(db.Model):
+    __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(32), unique=True, nullable=False)
     password = db.Column(db.String(32), nullable=False)
@@ -86,6 +87,7 @@ def validate_token():
 
 
 # Registration endpoint for user sign-up
+# TODO: Add JWT token generation
 @app.route("/auth/signup", methods=["POST"])
 def signup():
     data = request.get_json()
@@ -93,6 +95,11 @@ def signup():
 
     if not username or not password:
         return jsonify({"message": "Username and password are required"}), 400
+
+    # Check if the user already exists
+    user = User.query.filter_by(username=username).first()
+    if user:
+        return jsonify({"message": "User already exists"}), 400
 
     user = User(username=username, password=password)
 
