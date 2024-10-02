@@ -1,6 +1,57 @@
-from flask import Flask
+from flask import Flask, jsonify, request
+from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
+import os
+import datetime
+import jwt
+
+load_dotenv()
 
 app = Flask(__name__)
+
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("SQLALCHEMY_DATABASE_URI")
+
+db = SQLAlchemy(app)
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(32), unique=True, nullable=False)
+    password = db.Column(db.String(32), nullable=False)
+
+
+def generate_token():
+    data = request.get_json()
+    username = data.get("username")
+    if not username:
+        return jsonify({"message": "Username not provided"}), 400
+
+    expire_at = datetime.datetime.now() + datetime.timedelta(minutes=30)
+
+    payload = {"username": username, "expire_at": expire_at}
+
+    token = jwt.encode(payload=payload, key=app.config["SECRET_KEY"], algorithm="HS256")
+    return jsonify({"token": token}), 200
+
+
+def validate_token():
+    token = request.headers.get("Authentication")
+    if not token:
+        return jsonify({"message": "Token is missing"}), 400
+
+    # Extract token from 'Bearer <token>' format if present
+    try:
+        token = token.split(" ")[1]
+    except:
+        return jsonify({"message": "Invalid token format"}), 400
+
+    try:
+        decoded = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+        return jsonify({"message": "Token is valid", "user": decoded["username"]}), 200
+    except jwt.ExpiredSignatureError:
+        return jsonify({"message": "Token has expired"}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"message": "Invalid token"}), 401
 
 
 # Registration endpoint for user sign-up
@@ -12,7 +63,11 @@ def signup():
 # Login endpoint to authenticate users
 @app.route("/auth/login", methods=["POST"])
 def login():
-    return "Log In", 200
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+
+    return jsonify({ "message": "Login Success" }), 200
 
 
 # Endpoint for admins to add a new movie to the database
