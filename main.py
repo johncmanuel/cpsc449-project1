@@ -45,9 +45,6 @@ class UserRating(db.Model):
     rating: Mapped[int] = mapped_column(nullable=False)
 
 
-db = SQLAlchemy(app)
-
-
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(32), unique=True, nullable=False)
