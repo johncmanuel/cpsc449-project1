@@ -88,7 +88,24 @@ def validate_token():
 # Registration endpoint for user sign-up
 @app.route("/auth/signup", methods=["POST"])
 def signup():
-    return "Sign Up", 200
+    data = request.get_json()
+    username, password = data.get("username"), data.get("password")
+
+    if not username or not password:
+        return jsonify({"message": "Username and password are required"}), 400
+
+    user = User(username=username, password=password)
+
+    try:
+        db.session.add(user)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": "Error creating a user.", "error": str(e)}), 400
+    finally:
+        db.session.close()
+
+    return jsonify({"message": "User created successfully", "error": None}), 200
 
 
 # Login endpoint to authenticate users
