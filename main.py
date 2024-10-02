@@ -46,6 +46,7 @@ class UserRating(db.Model):
 
 db = SQLAlchemy(app)
 
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(32), unique=True, nullable=False)
@@ -99,7 +100,7 @@ def login():
     username = data.get("username")
     password = data.get("password")
 
-    return jsonify({ "message": "Login Success" }), 200
+    return jsonify({"message": "Login Success"}), 200
 
 
 # Endpoint for admins to add a new movie to the database
