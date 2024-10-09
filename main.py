@@ -52,6 +52,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(32), unique=True, nullable=False)
     password = db.Column(db.String(32), nullable=False)
+    user_type = db.Column(db.String(32), nullable=False)
     ratings = db.relationship("UserRating", back_populates="user")
 
 
@@ -59,14 +60,13 @@ def generate_token():
     data = request.get_json()
     username = data.get("username")
     if not username:
-        return jsonify({"message": "Username not provided"}), 400
+        return None
 
     expire_at = datetime.datetime.now() + datetime.timedelta(minutes=30)
-
-    payload = {"username": username, "expire_at": expire_at}
+    payload = {"username": username, "expire_at": str(expire_at)}
 
     token = jwt.encode(payload=payload, key=app.config["SECRET_KEY"], algorithm="HS256")
-    return jsonify({"token": token}), 200
+    return token
 
 
 def validate_token():
@@ -104,7 +104,7 @@ def signup():
     if user:
         return jsonify({"message": "User already exists"}), 400
 
-    user = User(username=username, password=password)
+    user = User(username=username, password=password, user_type="user")
 
     try:
         db.session.add(user)
@@ -132,7 +132,11 @@ def login():
     if not user:
         return jsonify({"message": "Invalid credentials"}), 401
 
-    return jsonify({"message": "Login Success"}), 200
+    token = generate_token()
+    if not token:
+        return jsonify({"message": "Unable to create token", "token": None}), 400
+
+    return jsonify({"message": "Login Success", "token": token}), 200
 
 
 # Endpoint for admins to add a new movie to the database
