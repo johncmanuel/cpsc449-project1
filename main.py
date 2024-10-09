@@ -205,12 +205,6 @@ def add_rating():
 # Endpoint to retrieve a list of existing user ratings for all movies
 @app.route("/movies", methods=["GET"])
 def get_movies():
-    return "All Movies", 200
-
-
-# Endpoint to fetch details for a specific movie, including its user ratings
-@app.route("/movies/<movie>", methods=["GET"])
-def get_movie_details():
     movies = Movie.query.all()
     if not movies:
         return jsonify({"message": "No movies found"}), 404
@@ -219,6 +213,12 @@ def get_movie_details():
         res.append({"id": movie.id, "title": movie.title})
     
     return jsonify(res), 200
+
+
+# Endpoint to fetch details for a specific movie, including its user ratings
+@app.route("/movies/<movie>", methods=["GET"])
+def get_movie_details():
+    return "Movie Details", 200
 
 
 # Endpoint that allows users to update their own movie ratings
