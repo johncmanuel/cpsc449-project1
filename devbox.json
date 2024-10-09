@@ -11,7 +11,7 @@
   "shell": {
     "init_hook": [
       "echo 'Welcome to devbox!' > /dev/null",
-      ". venv/bin/activate.fish",
+      ". $VENV_DIR/bin/activate",
       "echo 'activating virtualenv'",
       "pip install -r requirements.txt"
     ],
