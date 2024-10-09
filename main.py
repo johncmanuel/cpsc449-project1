@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Request
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 import os
@@ -52,6 +52,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(32), unique=True, nullable=False)
     password = db.Column(db.String(32), nullable=False)
+    # user_type is either 'user' or 'admin'
     user_type = db.Column(db.String(32), nullable=False)
     ratings = db.relationship("UserRating", back_populates="user")
 
@@ -69,15 +70,16 @@ def generate_token():
     return token
 
 
-def validate_token():
-    token = request.headers.get("Authentication")
+def validate_token(request: Request):
+    token = request.headers.get("Authorization")
+
     if not token:
         return jsonify({"message": "Token is missing"}), 400
 
     # Extract token from 'Bearer <token>' format if present
     try:
         token = token.split(" ")[1]
-    except:
+    except Exception:
         return jsonify({"message": "Invalid token format"}), 400
 
     try:
@@ -90,7 +92,6 @@ def validate_token():
 
 
 # Registration endpoint for user sign-up
-# TODO: Add JWT token generation
 @app.route("/auth/signup", methods=["POST"])
 def signup():
     data = request.get_json()
@@ -142,6 +143,23 @@ def login():
 # Endpoint for admins to add a new movie to the database
 @app.route("/admin/add-movie", methods=["POST"])
 def admin_add_movie():
+    resp, code = validate_token(request)
+    resp = resp.get_json()
+
+    # If the user exists in resp, the token is valid
+    if "user" not in resp:
+        return resp, code
+
+    username = resp.get("user")
+    user = User.query.filter_by(username=username).first()
+
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    user_type = user.user_type
+    if user_type != "admin":
+        return jsonify({"message": "Unauthorized"}), 401
+
     data = request.get_json()
 
     if not data:
