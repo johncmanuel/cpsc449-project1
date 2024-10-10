@@ -1,0 +1,11 @@
+# to run the services without the UI, use the -b flag
+# ex. devbox services up -b
+# ctrl-c to stop the ui
+
+# postgresql is already preconfigured to run, no need to define it here
+# https://www.jetify.com/docs/devbox/guides/services/#plugins-that-support-services
+processes:
+  flask:
+    command: python3 main.py
+    availability:
+      restart: "always"
