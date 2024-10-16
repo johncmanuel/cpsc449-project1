@@ -197,9 +197,40 @@ def admin_add_movie():
 
 
 # An endpoint for users to submit their ratings for movies
-@app.route("/add-rating/<movie>")
-def add_rating():
-    return "Add Movie Rating", 200
+@app.route("/add-rating/<int:movie_id>", methods=["POST"])
+def add_rating(movie_id):
+    resp, code = validate_token(request)
+    resp = resp.get_json()
+
+    if "user" not in resp:
+        return resp, code
+
+    username = resp["user"]
+    user = User.query.filter_by(username=username).first()
+
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    data = request.get_json()
+    rating = data.get("rating")
+
+    if not rating or not (1 <= rating <= 5):
+        return jsonify({"message": "Rating must be between 1 and 5"}), 400
+
+    movie = Movie.query.get(movie_id)
+    if not movie:
+        return jsonify({"message": "Movie not found"}), 404
+
+    user_rating = UserRating(user_id=user.id, movie_id=movie.id, rating=rating)
+
+    try:
+        db.session.add(user_rating)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": "Unable to add rating.", "error": str(e)}), 400
+
+    return jsonify({"message": "Rating addded successfully"}), 200
 
 
 # Endpoint to retrieve a list of existing user ratings for all movies
@@ -211,32 +242,116 @@ def get_movies():
     res = []
     for movie in movies:
         res.append({"id": movie.id, "title": movie.title})
-    
+
     return jsonify(res), 200
 
 
 # Endpoint to fetch details for a specific movie, including its user ratings
-@app.route("/movies/<movie>", methods=["GET"])
-def get_movie_details():
-    return "Movie Details", 200
+@app.route("/movies/<int:movie_id>", methods=["GET"])
+def get_movie_details(movie_id):
+    movie = Movie.query.get(movie_id)
+
+    if not movie:
+        return jsonify({"message": "Movie not found"}), 404
+
+    ratings = [
+        {"user_id": rating.user_id, "rating": rating.rating} for rating in movie.ratings
+    ]
+    return jsonify({"id": movie.id, "title": movie.title, "ratings": ratings}), 200
 
 
 # Endpoint that allows users to update their own movie ratings
-@app.route("/update-rating/<movie>", methods=["PUT"])
-def update_rating():
-    return "Update User Rating", 200
+@app.route("/update-rating/<int:movie_id>", methods=["PUT"])
+def update_rating(movie_id):
+    resp, code = validate_token(request)
+    resp = resp.get_json()
+
+    if "user" not in resp:
+        return resp, code
+
+    username = resp["user"]
+    user = User.query.filter_by(username=username).first()
+
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    data = request.get_json()
+    new_rating = data.get("rating")
+
+    if not new_rating or not (1 <= new_rating <= 5):
+        return jsonify({"message": "Rating must be between 1 and 5"}), 400
+
+    rating = UserRating.query.filter_by(user_id=user.id, movie_id=movie_id).first()
+
+    if not rating:
+        return jsonify({"message": "Rating not found"}), 404
+
+    rating.rating = new_rating
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": "Unable to update rating.", "error": str(e)}), 400
+
+    return jsonify({"message": "Rating updated successfully"}), 200
 
 
-# Admin-only endpoint to delete any movie's user rating from the database
-@app.route("/admin/delete-rating", methods=["DELETE"])
-def admin_delete_rating():
-    return "Delete Rating", 200
+@app.route("/admin/delete-rating/<int:rating_id>", methods=["DELETE"])
+def admin_delete_rating(rating_id):
+    resp, code = validate_token(request)
+    resp = resp.get_json()
+
+    if "user" not in resp:
+        return resp, code
+
+    username = resp["user"]
+    user = User.query.filter_by(username=username).first()
+
+    if not user or user.user_type != "admin":
+        return jsonify({"message": "Unauthorized"}), 401
+
+    rating = UserRating.query.get(rating_id)
+
+    if not rating:
+        return jsonify({"message": "Rating not found"}), 404
+
+    try:
+        db.session.delete(rating)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": "Unable to delete rating.", "error": str(e)}), 400
+
+    return jsonify({"message": "Rating deleted successfully"}), 200
 
 
-# Endpoint for users to delete their own ratings
-@app.route("/delete-rating", methods=["DELETE"])
-def delete_user_rating():
-    return "Delete Rating", 200
+@app.route("/delete-rating/<int:movie_id>", methods=["DELETE"])
+def delete_user_rating(movie_id):
+    resp, code = validate_token(request)
+    resp = resp.get_json()
+
+    if "user" not in resp:
+        return resp, code
+
+    username = resp["user"]
+    user = User.query.filter_by(username=username).first()
+
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    rating = UserRating.query.filter_by(user_id=user.id, movie_id=movie_id).first()
+    if not rating:
+        return jsonify({"message": "Rating not found"}), 404
+
+    try:
+        db.session.delete(rating)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": "Unable to delete rating.", "error": str(e)}), 400
+
+    return jsonify({"message": "Rating deleted successfully"}), 200
 
 
 if __name__ == "__main__":
@@ -244,4 +359,4 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
 
-    app.run(debug=True)
+    app.run(debug=True, port=4444)
