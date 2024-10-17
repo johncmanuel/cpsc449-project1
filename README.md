@@ -15,3 +15,4 @@ The movie ratings service is an API that allows users to interact with a databas
 Users are able to create an account with a username and password. Then, they are able to login and perform the aforementioned operations. Admins are able to login at the same endpoint.
 
 ### File Upload API
+<img src='./uploads/pepe-frog.gif' title='leEpic gif' width='' alt='leEpic gif' />
