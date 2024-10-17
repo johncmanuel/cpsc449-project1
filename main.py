@@ -1,10 +1,11 @@
-from flask import Flask, jsonify, request, Request
+from flask import Flask, jsonify, request, Request, flash, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 import os
 import datetime
 import jwt
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from werkzeug.utils import secure_filename
 
 
 class Base(DeclarativeBase):
@@ -21,7 +22,45 @@ def get_env_var(env_var):
         raise Exception(f"{env_var} not found in your .env file!")
 
 
+
+UPLOAD_FOLDER = './uploads'
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+
+
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/upload', methods=['GET','POST'])
+def upload_file():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        file = request.files['file']
+        # if user does not select file, browser also submit an empty part without filename
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            return redirect(url_for('upload_file', filename=filename))
+    return '''
+    <!doctype html>
+    <title>Upload new File</title>
+    <h1>Upload new File</h1>
+    <form method=post enctype=multipart/form-data>
+      <input type=file name=file>
+      <input type=submit value=Upload>
+    </form>
+    '''
+
 
 app.config["SECRET_KEY"] = get_env_var("SECRET_KEY")
 app.config["SQLALCHEMY_DATABASE_URI"] = get_env_var("DATABASE_URI")
@@ -90,6 +129,11 @@ def validate_token(request: Request):
     except jwt.InvalidTokenError:
         return jsonify({"message": "Invalid token"}), 401
 
+
+
+@app.route("/")
+def home():
+    return "Welcome to the Movie Rating API!, if you are seeing this message, the API is working!"
 
 # Registration endpoint for user sign-up
 @app.route("/auth/signup", methods=["POST"])
@@ -354,9 +398,13 @@ def delete_user_rating(movie_id):
     return jsonify({"message": "Rating deleted successfully"}), 200
 
 
+
+
+
 if __name__ == "__main__":
     # Create the DB tables if they don't exist
     with app.app_context():
         db.create_all()
 
-    app.run(debug=True, port=4444)
+    app.run(debug=True, port=5000)
+
