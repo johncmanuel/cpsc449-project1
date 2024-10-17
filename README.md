@@ -15,4 +15,13 @@ The movie ratings service is an API that allows users to interact with a databas
 Users are able to create an account with a username and password. Then, they are able to login and perform the aforementioned operations. Admins are able to login at the same endpoint.
 
 ### File Upload API
-<img src='./uploads/pepe-frog.gif' title='leEpic gif' width='' alt='leEpic gif' />
+
+The File Upload API enables users to upload files of their choice through a POST request. The supported extensions are:
+
+1. .txt
+2. .pdf
+3. .png,
+4. .jpg,
+5. .jpeg,
+6. .gif
+
