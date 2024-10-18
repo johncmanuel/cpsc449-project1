@@ -230,7 +230,8 @@ def get_movie_details(movie_id):
         return jsonify({"message": "Movie not found"}), 404
 
     ratings = [
-        {"user_id": rating.user_id, "rating": rating.rating} for rating in movie.ratings
+        {"user_id": rating.user_id, "rating": rating.rating, "rating_id": rating.id}
+        for rating in movie.ratings
     ]
     return jsonify({"id": movie.id, "title": movie.title, "ratings": ratings}), 200
 
