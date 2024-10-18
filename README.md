@@ -2,7 +2,12 @@
 
 Project 1 for CPSC 449: Backend Engineering
 
-Team: Tomas Oh, Jahn Tibayan, Nestor Reategui, John Carlo Manuel
+Team:
+
+1. Tomas Oh
+2. Jahn Tibayan
+3. Nestor Reategui
+4. John Carlo Manuel (CWID: 884779844)
 
 ## How to Run
 
