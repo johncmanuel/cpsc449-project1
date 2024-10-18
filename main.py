@@ -1,36 +1,12 @@
-from flask import Flask, jsonify, request, Request
-from flask_sqlalchemy import SQLAlchemy
-from dotenv import load_dotenv
+from flask import jsonify, request
 import os
-import datetime
-import jwt
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from werkzeug.utils import secure_filename
+from internal.auth import generate_token, validate_token
+from internal.models import Movie, UserRating, User
+from internal.init import db, app, ALLOWED_EXTENSIONS
 
 
-class Base(DeclarativeBase):
-    pass
-
-
-load_dotenv()
-
-
-def get_env_var(env_var):
-    try:
-        return os.getenv(env_var)
-    except KeyError:
-        raise Exception(f"{env_var} not found in your .env file!")
-
-
-UPLOAD_FOLDER = "./uploads"
-ALLOWED_EXTENSIONS = {"txt", "pdf", "png", "jpg", "jpeg", "gif"}
-
-
-app = Flask(__name__)
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB limit
-
-
+# Include File Upload API as part of the movie service API.
 @app.route("/upload", methods=["POST"])
 def upload_file():
     def allowed_file(filename):
@@ -49,6 +25,7 @@ def upload_file():
 
     successful_uploads = []
 
+    # Upload any valid files. Stop uploading if an invalid file is found
     for file in request.files.getlist("file"):
         if not file.filename or file.filename == "":
             return (
@@ -87,103 +64,6 @@ def upload_file():
         200,
     )
 
-    # if request.method == "POST":
-    #     # check if the post request has the file part
-    #     if "file" not in request.files:
-    #         flash("No file part")
-    #         return redirect(request.url)
-    #     file = request.files["file"]
-    #     # if user does not select file, browser also submit an empty part without filename
-    #     if file.filename == "":
-    #         flash("No selected file")
-    #         return redirect(request.url)
-    #     if file and allowed_file(file.filename):
-    #         filename = secure_filename(file.filename)
-    #         file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-    #         return redirect(url_for("upload_file", filename=filename))
-    # return """
-    # <!doctype html>
-    # <title>Upload new File</title>
-    # <h1>Upload new File</h1>
-    # <form method=post enctype=multipart/form-data>
-    #   <input type=file name=file>
-    #   <input type=submit value=Upload>
-    # </form>
-    # """
-
-
-app.config["SECRET_KEY"] = get_env_var("SECRET_KEY")
-app.config["SQLALCHEMY_DATABASE_URI"] = get_env_var("DATABASE_URI")
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-db = SQLAlchemy(app, model_class=Base)
-
-
-class Movie(db.Model):
-    __tablename__ = "movies"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str] = mapped_column(nullable=False)
-    ratings = db.relationship("UserRating", back_populates="movie")
-
-
-class UserRating(db.Model):
-    __tablename__ = "user_ratings"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(db.ForeignKey("users.id"))
-    movie_id: Mapped[int] = mapped_column(db.ForeignKey("movies.id"))
-    rating: Mapped[int] = mapped_column(nullable=False)
-    user = db.relationship("User", back_populates="ratings")
-    movie = db.relationship("Movie", back_populates="ratings")
-
-
-class User(db.Model):
-    __tablename__ = "users"
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(32), unique=True, nullable=False)
-    password = db.Column(db.String(32), nullable=False)
-    # user_type is either 'user' or 'admin'
-    user_type = db.Column(db.String(32), nullable=False)
-    ratings = db.relationship("UserRating", back_populates="user")
-
-
-def generate_token():
-    data = request.get_json()
-    username = data.get("username")
-    if not username:
-        return None
-
-    expire_at = datetime.datetime.now() + datetime.timedelta(minutes=30)
-    payload = {"username": username, "expire_at": str(expire_at)}
-
-    token = jwt.encode(payload=payload, key=app.config["SECRET_KEY"], algorithm="HS256")
-    return token
-
-
-def validate_token(request: Request):
-    token = request.headers.get("Authorization")
-
-    if not token:
-        return jsonify({"message": "Token is missing"}), 400
-
-    # Extract token from 'Bearer <token>' format if present
-    try:
-        token = token.split(" ")[1]
-    except Exception:
-        return jsonify({"message": "Invalid token format"}), 400
-
-    try:
-        decoded = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
-        return jsonify({"message": "Token is valid", "user": decoded["username"]}), 200
-    except jwt.ExpiredSignatureError:
-        return jsonify({"message": "Token has expired"}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({"message": "Invalid token"}), 401
-
-
-@app.route("/")
-def home():
-    return "Welcome to the Movie Rating API!, if you are seeing this message, the API is working!"
-
 
 # Registration endpoint for user sign-up
 @app.route("/auth/signup", methods=["POST"])
@@ -214,7 +94,6 @@ def signup():
 
 
 # Login endpoint to authenticate users
-# TODO: Validate JWT token, check hashed passwords, and add other security stuff
 @app.route("/auth/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -227,7 +106,7 @@ def login():
     if not user:
         return jsonify({"message": "Invalid credentials"}), 401
 
-    token = generate_token()
+    token = generate_token(app.config["SECRET_KEY"])
     if not token:
         return jsonify({"message": "Unable to create token", "token": None}), 400
 
@@ -237,7 +116,7 @@ def login():
 # Endpoint for admins to add a new movie to the database
 @app.route("/admin/add-movie", methods=["POST"])
 def admin_add_movie():
-    resp, code = validate_token(request)
+    resp, code = validate_token(request, app.config["SECRET_KEY"])
     resp = resp.get_json()
 
     # If the user exists in resp, the token is valid
@@ -293,7 +172,7 @@ def admin_add_movie():
 # An endpoint for users to submit their ratings for movies
 @app.route("/add-rating/<int:movie_id>", methods=["POST"])
 def add_rating(movie_id):
-    resp, code = validate_token(request)
+    resp, code = validate_token(request, app.config["SECRET_KEY"])
     resp = resp.get_json()
 
     if "user" not in resp:
@@ -331,8 +210,10 @@ def add_rating(movie_id):
 @app.route("/movies", methods=["GET"])
 def get_movies():
     movies = Movie.query.all()
+
     if not movies:
         return jsonify({"message": "No movies found"}), 404
+
     res = []
     for movie in movies:
         res.append({"id": movie.id, "title": movie.title})
@@ -357,7 +238,7 @@ def get_movie_details(movie_id):
 # Endpoint that allows users to update their own movie ratings
 @app.route("/update-rating/<int:movie_id>", methods=["PUT"])
 def update_rating(movie_id):
-    resp, code = validate_token(request)
+    resp, code = validate_token(request, app.config["SECRET_KEY"])
     resp = resp.get_json()
 
     if "user" not in resp:
@@ -393,7 +274,7 @@ def update_rating(movie_id):
 
 @app.route("/admin/delete-rating/<int:rating_id>", methods=["DELETE"])
 def admin_delete_rating(rating_id):
-    resp, code = validate_token(request)
+    resp, code = validate_token(request, app.config["SECRET_KEY"])
     resp = resp.get_json()
 
     if "user" not in resp:
@@ -422,7 +303,7 @@ def admin_delete_rating(rating_id):
 
 @app.route("/delete-rating/<int:movie_id>", methods=["DELETE"])
 def delete_user_rating(movie_id):
-    resp, code = validate_token(request)
+    resp, code = validate_token(request, app.config["SECRET_KEY"])
     resp = resp.get_json()
 
     if "user" not in resp:
