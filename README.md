@@ -7,10 +7,10 @@ Team: Tomas Oh, Jahn Tibayan, Nestor Reategui, John Carlo Manuel
 ## How to Run
 
 1. Install the latest versions of Python and PostgreSQL. This can be done either manually through official websites or easily with Devbox.
-2. Setup a virtual environment and activate it.
+2. Setup a virtual environment and activate it. If using Devbox, the virtual environment is already setup and activated upon launch.
 3. Install the required packages using `pip install -r requirements.txt`
 4. Setup the PostgreSQL database and create and modify a `.env` file accordingly to `.env.example`.
-5. Start the database server and run the server, `python main.py`
+5. Start the database server and run the Flask server, `python main.py`
 
 ## Project Overview
 
