@@ -184,6 +184,10 @@ def add_rating(movie_id):
     if not user:
         return jsonify({"message": "User not found"}), 404
 
+    # Admins can't rate movies
+    if not user.user_type or user.user_type == "admin":
+        return jsonify({"message": "Unauthorized"}), 401
+
     data = request.get_json()
     rating = data.get("rating")
 
@@ -273,6 +277,7 @@ def update_rating(movie_id):
     return jsonify({"message": "Rating updated successfully"}), 200
 
 
+# Admins can delete any rating
 @app.route("/admin/delete-rating/<int:rating_id>", methods=["DELETE"])
 def admin_delete_rating(rating_id):
     resp, code = validate_token(request, app.config["SECRET_KEY"])
@@ -302,6 +307,7 @@ def admin_delete_rating(rating_id):
     return jsonify({"message": "Rating deleted successfully"}), 200
 
 
+# user can delete their own rating from a particular movie
 @app.route("/delete-rating/<int:movie_id>", methods=["DELETE"])
 def delete_user_rating(movie_id):
     resp, code = validate_token(request, app.config["SECRET_KEY"])
