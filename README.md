@@ -4,6 +4,14 @@ Project 1 for CPSC 449: Backend Engineering
 
 Team: Tomas Oh, Jahn Tibayan, Nestor Reategui, John Carlo Manuel
 
+## How to Run
+
+1. Install the latest versions of Python and PostgreSQL. This can be done either manually through official websites or easily with Devbox.
+2. Setup a virtual environment and activate it.
+3. Install the required packages using `pip install -r requirements.txt`
+4. Setup the PostgreSQL database and create and modify a `.env` file accordingly to `.env.example`.
+5. Start the database server and run the server, `python main.py`
+
 ## Project Overview
 
 This project contains two components: a movie ratings service and a file upload API.
@@ -24,4 +32,3 @@ The File Upload API enables users to upload files of their choice through a POST
 4. .jpg,
 5. .jpeg,
 6. .gif
-
