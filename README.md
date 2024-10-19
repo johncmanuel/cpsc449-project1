@@ -5,8 +5,8 @@ Project 1 for CPSC 449: Backend Engineering
 Team:
 
 1. Tomas Oh (CWID: 885566877)
-2. Jahn Tibayan
-3. Nestor Reategui
+2. Jahn Tibayan (CWID: 884691718)
+3. Nestor Reategui (CWID: 886727635)
 4. John Carlo Manuel (CWID: 884779844)
 
 ## How to Run
