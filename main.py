@@ -74,7 +74,9 @@ def upload_file():
 @app.route("/auth/signup", methods=["POST"])
 def signup():
     data = request.get_json()
-    username, password = data.get("username"), data.get("password")
+    username = data.get("username")
+    password = data.get("password")
+    user_type = data.get("user_type", "user")  # Default to 'user' if not specified
 
     if not username or not password:
         return jsonify({"message": "Username and password are required"}), 400
@@ -84,7 +86,11 @@ def signup():
     if user:
         return jsonify({"message": "User already exists"}), 400
 
-    user = User(username=username, password=password, user_type="user")
+    # Validate user type
+    if user_type not in ["user", "admin"]:
+        return jsonify({"message": "Invalid user type. Must be 'user' or 'admin'."}), 400
+
+    user = User(username=username, password=password, user_type=user_type)
 
     try:
         db.session.add(user)
@@ -96,7 +102,6 @@ def signup():
         db.session.close()
 
     return jsonify({"message": "User created successfully", "error": None}), 200
-
 
 # Login endpoint to authenticate users
 @app.route("/auth/login", methods=["POST"])
