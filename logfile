@@ -1,0 +1,15 @@
+2024-10-19 01:18:57.675 PDT [75731] FATAL:  lock file "postmaster.pid" already exists
+2024-10-19 01:18:57.675 PDT [75731] HINT:  Is another postmaster (PID 75713) running in data directory "/Users/jahn/desktop/cloning_vat/cpsc449-project1/.devbox/virtenv/postgresql/data"?
+2024-10-19 01:19:29.349 PDT [75750] LOG:  starting PostgreSQL 16.4 on aarch64-apple-darwin23.6.0, compiled by clang version 16.0.6, 64-bit
+2024-10-19 01:19:29.350 PDT [75750] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2024-10-19 01:19:29.350 PDT [75750] LOG:  listening on IPv6 address "::1", port 5432
+2024-10-19 01:19:29.350 PDT [75750] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+2024-10-19 01:19:29.353 PDT [75753] LOG:  database system was shut down at 2024-10-19 01:19:23 PDT
+2024-10-19 01:19:29.356 PDT [75750] LOG:  database system is ready to accept connections
+2024-10-19 01:19:31.720 PDT [75750] LOG:  received fast shutdown request
+2024-10-19 01:19:31.720 PDT [75750] LOG:  aborting any active transactions
+2024-10-19 01:19:31.722 PDT [75750] LOG:  background worker "logical replication launcher" (PID 75756) exited with exit code 1
+2024-10-19 01:19:31.723 PDT [75751] LOG:  shutting down
+2024-10-19 01:19:31.723 PDT [75751] LOG:  checkpoint starting: shutdown immediate
+2024-10-19 01:19:31.726 PDT [75751] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.004 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/150C108, redo lsn=0/150C108
+2024-10-19 01:19:31.730 PDT [75750] LOG:  database system is shut down

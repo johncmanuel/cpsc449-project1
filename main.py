@@ -6,9 +6,15 @@ from internal.models import Movie, UserRating, User
 from internal.init import db, app, ALLOWED_EXTENSIONS
 
 
-# Include File Upload API as part of the movie service API.
 @app.route("/upload", methods=["POST"])
 def upload_file():
+    resp, code = validate_token(request, app.config["SECRET_KEY"])
+    resp = resp.get_json()
+
+    if "user" not in resp:
+        return resp, code
+
+    # Continue with the file upload process
     def allowed_file(filename):
         return (
             "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -63,7 +69,6 @@ def upload_file():
         ),
         200,
     )
-
 
 # Registration endpoint for user sign-up
 @app.route("/auth/signup", methods=["POST"])
